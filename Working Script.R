@@ -4,7 +4,7 @@ library(sp)
 library(rgeos)
 
 #inputs
-city_name <- 'NEW ORLEANS'
+city_name <- 'INUVIK'
 zoom = .1
 
 #gets OMS-defined centroid by city_ name
