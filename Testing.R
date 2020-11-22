@@ -1,5 +1,5 @@
 #inputs
-city_name <- 'INUVIK'
+city_name <- 'New Orleans'
 zoom = .5
 
 #gets OMS-defined centroid by city_ name
@@ -18,3 +18,4 @@ my_box <- rgeos::bbox2SP(n = (dat$lat + zoom*1.5),
 
 plot(my_box,lwd=0.1)
 
+gc()
