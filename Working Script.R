@@ -2,9 +2,10 @@ library(osmdata)
 library(mapview)
 library(sp)
 library(rgeos)
+library(plotrix)
 
 #inputs
-city_name <- 'ITHACA'
+city_name <- 'Ithaca'
 zoom = .15
 
 #gets OMS-defined centroid by city_ name
@@ -36,36 +37,36 @@ my_box <- rgeos::bbox2SP(n = (dat$lat + zoom*1.5),
                          proj4string = CRS("+proj=aea +lat_1=29.5 +lat_2=45.5 +lat_0=37.5 +lon_0=-96 +x_0=0 +y_0=0 +ellps=GRS80 +datum=NAD83 +units=m +no_defs"))
 
 #mapview::mapview(my_box)
-#plot(my_box)
+plot(my_box)
 #plot(dat.coord)
 
 
-motorway <- opq(bbox = c((dat$lon - zoom), (dat$lat - zoom), (dat$lon + zoom), (dat$lat + zoom)))%>%
+motorway <- opq(bbox = c((dat$lon - zoom), (dat$lat - zoom*1.5), (dat$lon + zoom), (dat$lat + zoom*1.5)))%>%
   add_osm_feature(key = "highway", value= 'motorway')
   motorway <- osmdata_sp(motorway, quiet = TRUE)
   motorway <- motorway$osm_lines
   
-trunk <- opq(bbox = c((dat$lon - zoom), (dat$lat - zoom), (dat$lon + zoom), (dat$lat + zoom)))%>%
+trunk <- opq(bbox = c((dat$lon - zoom), (dat$lat - zoom*1.5), (dat$lon + zoom), (dat$lat + zoom*1.5)))%>%
   add_osm_feature(key = "highway", value= 'trunk')
   trunk <- osmdata_sp(trunk, quiet = TRUE)
   trunk <- trunk$osm_lines
   
-primary <- opq(bbox = c((dat$lon - zoom), (dat$lat - zoom), (dat$lon + zoom), (dat$lat + zoom)))%>%
+primary <- opq(bbox = c((dat$lon - zoom), (dat$lat - zoom*1.5), (dat$lon + zoom), (dat$lat + zoom*1.5)))%>%
   add_osm_feature(key = "highway", value= 'primary')
   primary <- osmdata_sp(primary, quiet = TRUE)
   primary <- primary$osm_lines
   
-secondary <- opq(bbox = c((dat$lon - zoom), (dat$lat - zoom), (dat$lon + zoom), (dat$lat + zoom)))%>%
+secondary <- opq(bbox = c((dat$lon - zoom), (dat$lat - zoom*1.5), (dat$lon + zoom), (dat$lat + zoom*1.5)))%>%
   add_osm_feature(key = "highway", value= 'secondary')
   secondary <- osmdata_sp(secondary, quiet = TRUE)
   secondary <- secondary$osm_lines
   
-tertiary <- opq(bbox = c((dat$lon - zoom), (dat$lat - zoom), (dat$lon + zoom), (dat$lat + zoom)))%>%
+tertiary <- opq(bbox = c((dat$lon - zoom), (dat$lat - zoom*1.5), (dat$lon + zoom), (dat$lat + zoom*1.5)))%>%
   add_osm_feature(key = "highway", value= 'tertiary')
   tertiary <- osmdata_sp(tertiary, quiet = TRUE)
   tertiary <- tertiary$osm_lines
   
-roads <- opq(bbox = c((dat$lon - zoom), (dat$lat - zoom), (dat$lon + zoom), (dat$lat + zoom)))%>%
+roads <- opq(bbox = c((dat$lon - zoom), (dat$lat - zoom*1.5), (dat$lon + zoom), (dat$lat + zoom*1.5)))%>%
   add_osm_feature(key = "highway")
   roads <- osmdata_sp(roads, quiet = TRUE)
   roads <- roads$osm_lines
@@ -79,7 +80,6 @@ roads <- opq(bbox = c((dat$lon - zoom), (dat$lat - zoom), (dat$lon + zoom), (dat
   motorway <- gIntersection(motorway, my_box, byid = TRUE, drop_lower_td = TRUE)
 
 
-
 #plot map
   plot(my_box,lwd=0.1)
   plot(roads,lwd=0.1, col= 'lightgray', add=TRUE)
@@ -90,8 +90,10 @@ roads <- opq(bbox = c((dat$lon - zoom), (dat$lat - zoom), (dat$lon + zoom), (dat
   plot(motorway,lwd=1.5, col= 'dimgrey', add=TRUE)
 
   
-  n = (dat$lat + zoom)
-  s = (dat$lat - zoom)
+  
+#title box take 1  
+  n = (dat$lat + zoom*1.5)
+  s = (dat$lat - zoom*1.5)
   w = (dat$lon + zoom)
   e = (dat$lon - zoom)
 
@@ -100,7 +102,7 @@ roads <- opq(bbox = c((dat$lon - zoom), (dat$lat - zoom), (dat$lon + zoom), (dat
        (w -.002),
        (n*.9998),
         col = 'white',
-       #border = FALSE)
+       border = FALSE)
   
  text(dat$lon, dat$lat + (zoom *.78), city_name, cex =2)
 
