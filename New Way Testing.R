@@ -1,14 +1,15 @@
 library(tidyverse)
 library(osmdata) 
-library(showtext)
 library(ggmap)
 library(rvest)
 library(sf)
+library(sp)
 library(rgeos)
+library(extrafont)
 
 
-city_name = "Ithaca"
-zoom = .15
+city_name = "LONDON"
+zoom = .1
 
 #gets OMS-defined centroid by city_ name
 dat <- getbb(city_name, format_out ="data.frame", limit = 1) 
@@ -22,6 +23,7 @@ n = (dat$lat + (zoom*1.2))
 s = (dat$lat - (zoom*1.2)) 
 w = (dat$lon + zoom) 
 e = (dat$lon - zoom)
+
 
 #make bounding box
 my_box <- rgeos::bbox2SP(n, s, w, e,
@@ -53,50 +55,48 @@ small_streets <- my_box_sf %>%
                   )) %>%
                    osmdata_sf()
 
-river <- my_box_sf %>%
-  opq()%>%
-  add_osm_feature(key = "waterway", value = "river") %>%
-  osmdata_sf()
-
 railway <- my_box_sf %>%
   opq()%>%
   add_osm_feature(key = "railway", value="rail") %>%
   osmdata_sf()
 
-
-#plotting data
-ggplot() +
+#create map
+map <- ggplot() +
   geom_sf(data = small_streets$osm_lines,
           inherit.aes = FALSE,
           color = "#cccccc",
-          size = .4,
-          alpha = .3) +
+          size = .25,
+          alpha = .8) +
   geom_sf(data = med_streets$osm_lines,
           inherit.aes = FALSE,
           color = "#919191",
-          size = .8,
-          alpha = .3) +
+          size = .5,
+          alpha = .8) +
   geom_sf(data = railway$osm_lines,
           inherit.aes = FALSE,
           color = "#6e6e6e",
-          size = .6,
-          alpha = .3) +
+          size = .1,
+          alpha = .7) +
   geom_sf(data = big_streets$osm_lines,
           inherit.aes = FALSE,
           color = "#3b3b3b",
-          size = 1,
-          alpha = .3) +
+          size = .8,
+          alpha = .7) +
   coord_sf(xlim = c(e, w), 
-           ylim = c(s, n),
+           ylim = c(s + (zoom/6), n - (zoom/6)),
            expand = FALSE)+
-  theme_void()
+  theme_void()+
+  ggtitle(city_name, subtitle = "My subtitle")
+
+#plot map and set theme
+map + theme(
+  plot.title = element_text(color="Black", size=20, face="bold", hjust = 0.5, margin = margin(t = 40, b= -40)),
+  plot.subtitle.title = element_text(color="Black", size=20, face="bold", hjust = 0.5, margin = margin(t = 40, b= -40)))
+
 
 
 #quick test
-ggplot() +
-  geom_sf(data = river$osm_lines,
-          inherit.aes = FALSE,
-          color = "blue") +
+sim <- ggplot() +
   geom_sf(data = railway$osm_lines,
           inherit.aes = FALSE,
           color = "lightgrey") +
@@ -106,4 +106,22 @@ ggplot() +
   coord_sf(xlim = c(e, w), 
            ylim = c(s, n),
            expand = FALSE)+
-  theme_void()
+  theme_void()+
+  ggtitle(city_name, subtitle = "subtitle")
+
+sim + theme(
+  plot.title = element_text(color = "black", size = 40, face = "bold", hjust = 0.5),
+  plot.subtitle = element_text(color = "black", size = 20, hjust = 0.5))
+
+
+
+
+
+
+
+
+
+
+
+
+
