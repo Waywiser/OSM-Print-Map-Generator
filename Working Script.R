@@ -3,10 +3,11 @@ library(mapview)
 library(sp)
 library(rgeos)
 library(plotrix)
+library(rgdal)
 
 #inputs
-city_name <- 'Ithaca'
-zoom = .15
+city_name <- 'Great Bend, Kansas'
+zoom = .01
 
 #gets OMS-defined centroid by city_ name
 dat <- getbb(city_name, format_out ="data.frame", limit = 1) 
@@ -81,30 +82,45 @@ roads <- opq(bbox = c((dat$lon - zoom), (dat$lat - zoom*1.5), (dat$lon + zoom), 
 
 
 #plot map
-  plot(my_box,lwd=0.1)
-  plot(roads,lwd=0.1, col= 'lightgray', add=TRUE)
+  plot(my_box,lwd=1, col = 'red')
+  plot(roads,lwd=1, col= 'black', add=TRUE)
   plot(tertiary,lwd=0.2, col= 'grey', add=TRUE)
   plot(secondary,lwd=0.7, col= 'dimgrey', add=TRUE)
   plot(primary,lwd=0.1, col= 'DARKSLATEGRAY', add=TRUE)
   plot(trunk,lwd=1.4, col= 'black', add=TRUE)
   plot(motorway,lwd=1.5, col= 'dimgrey', add=TRUE)
 
+#Testing
   
+  pol = 
+    SpatialPolygons(list(Polygons(list(Polygon(cbind(c(0,1,1,0,0),c(0,0,1,1,0)))), 
+                                  ID="polygon")))
+  line = SpatialLines(list(Lines(list(Line(cbind(c(0,1),c(0.5,0.5)))), 
+                                 ID="line")))
+  plot(pol)
+  plot(line, add = T)
   
-#title box take 1  
-  n = (dat$lat + zoom*1.5)
-  s = (dat$lat - zoom*1.5)
-  w = (dat$lon + zoom)
-  e = (dat$lon - zoom)
+ head(blocks@data)
+  
+  split <- gIntersection(my_box, roads)               # intersect your line with the polygon
+  split_buf <- gBuffer(split, width = 0.000001)        # create a very thin polygon buffer of the intersected line
+  blocks <- gDifference(my_box, split_buf)                 # split using gDifference
 
-  rect((e + .002),
-       (s*1.0034),
-       (w -.002),
-       (n*.9998),
-        col = 'white',
-       border = FALSE)
-  
- text(dat$lon, dat$lat + (zoom *.78), city_name, cex =2)
+ blocks_df <- SpatialPolygonsDataFrame(blocks,data=as.data.frame("blocks_df"))
+
+library(rmapshaper)
+ blocks_df_exp <- ms_explode(blocks_df)
 
  
+ blocks_df_exp$color <- sample(c("blue","dark blue","light blue"), size = nrow(blocks_df_exp), replace = TRUE)
+ 
+ plot(blocks_df_exp, col = blocks_df_exp$color)
+ 
+ head(blocks_df_exp@data)
+ 
+ 
+ 
+#export shapefile
+writeOGR(obj=blocks_df, dsn="./", layer="blocks_df", driver="ESRI Shapefile")
+
   
