@@ -5,8 +5,7 @@ library(rvest)
 library(sf)
 library(sp)
 library(rgeos)
-#must download xQuartz
-library(showtext)
+
 
 title = "Great Bend"
 subtitle = "Kansas"

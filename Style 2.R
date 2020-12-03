@@ -6,19 +6,24 @@ library(plotrix)
 library(rgdal)
 library(rmapshaper)
 library(raster)
+library(sf)
+library(ggplot2)
 
 #inputs
-title = "NEW YORK CITY"
-subtitle = "NEW YORK"
+title = "GREAT BEND"
+subtitle = "KANSAS"
 
 city_name <- (paste(title,",", subtitle, sep="", collapse=NULL))
-zoom = 50
+zoom = 100
 
 blue = c("#537699","#D7D9DB", "#5B80A6","#97B1CC","#408BD6", "#387DC2", "#48596B")
 multi = c("#ABE188","#F7EF99", "#F1BB87","#F78E69","#5D675B", "#042A2B", "#5EB1BF")
 multi2 = c("#1082C4","#98D6FA", "#F2A274","#98D6FA","#E8C0A9", "#0474B5", "#A1623D")
+multi3 = c("#4787D1","#184C87", "#A2C8F5","#E3B886","#BA956A", "#B89369", "#4487D4")
+multi4 = c("#2E2D25","#736A05", "#D9D8D2","#3E469C","#B3AD6F", "#8389C9", "#6B74D6")
+multi5 = c("870058", "A4303F", "F2D0A4", "FFECCC", "C8D6AF", "8DA1B9", "85BDBF")
 
-color = multi2
+color = blue
 
 #adjust zoom
 zoom = (1/zoom)
@@ -73,12 +78,14 @@ projection(my_box, asText=TRUE)
 
 #convert streets to polygons and take difference
 split <- gIntersection(my_box, streets)               # intersect your line with the polygon
-split_buf <- gBuffer(split, width = 0.000001)        # create a very thin polygon buffer of the intersected line
+split_buf <- gBuffer(split, width = 0.0001)        # create a very thin polygon buffer of the intersected line
 blocks <- gDifference(my_box, split_buf)                 # split using gDifference
 
 #convert to spdf and to single polygons
 blocks <- SpatialPolygonsDataFrame(blocks,data=as.data.frame("blocks_df"))
-blocks <- ms_explode(blocks)
+blocks<- ms_explode(blocks)
+
+plot(blocks)
 
 #random colors
 blocks$color <- sample(c(color), size = nrow(blocks), replace = TRUE)
@@ -112,6 +119,9 @@ print <- map + theme(
   plot.title = element_text(family = 'Trebuchet MS', color = "black", size = 100, face = "bold", hjust = 0.5, margin = margin(t = 20)),
   plot.subtitle = element_text(family = 'Trebuchet MS', color = "black", size = 40, hjust = 0.5,margin = margin(t=5, b = 20)))
 
-setwd('/Users/mac/Desktop/waywiser/OSM-Print-Map-Generator/prints')
+setwd('/Users/mac/Desktop/waywiser/OSM-Print-Map-Generator/data')
 ggsave(filename=(paste(title," Blocks",".png", sep="", collapse=NULL)), plot=print, device="png",
        path="./", height=17, width=11, units="in", dpi=300)
+
+gc()
+
