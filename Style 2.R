@@ -9,6 +9,7 @@ library(raster)
 library(sf)
 library(ggplot2)
 
+
 #inputs
 title = "GREAT BEND"
 subtitle = "KANSAS"
@@ -64,7 +65,7 @@ small_streets <- my_box_sf %>%
                             "residential", "living_street", "unclassified","service"
                   )) %>%
   osmdata_sf()
-
+small_streets <- st_crop(all_streets$osm_lines, my_box_sf)
 
 #check plots
 plot(my_box)
@@ -83,6 +84,9 @@ blocks <- gDifference(my_box, split_buf)                 # split using gDifferen
 
 #convert to spdf and to single polygons
 blocks <- SpatialPolygonsDataFrame(blocks,data=as.data.frame("blocks_df"))
+
+
+#maybe convert to st here to speed things up
 blocks<- ms_explode(blocks)
 
 plot(blocks)
