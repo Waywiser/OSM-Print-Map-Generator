@@ -83,6 +83,21 @@ plot(cemetery_mp$geometry)
 
   #cemetery <- st_crop(cemetery, my_box_sf) 
 
+
+#pull water
+water <- opq(bbox = c((dat$lon - zoom), (dat$lat - zoom*1.05), (dat$lon + zoom), (dat$lat + zoom*1.05)))%>%
+  add_osm_feature(key = "waterway", value = c("river", "canal", "riverbank"))
+water <- osmdata_sp(water, quiet = TRUE)
+water_p <- water$osm_polygons
+water_mp <- water$osm_multipolygons
+water_p <- st_as_sf(water_p)
+water_mp <- st_as_sf(water_mp)
+
+plot(water_p$geometry)
+plot(water_mp$geometry)
+
+mapview(water_p)
+
 #buffer streets / get blocks
 split <- gIntersection(my_box, streets)               # intersect your line with the polygon
 streets_buf <- gBuffer(split, width = 0.0001)        # create a very thin polygon buffer of the intersected line
@@ -90,7 +105,7 @@ blocks <- gDifference(my_box, streets_buf)
 
 
 #import rasters
-#tif <- "C:/Users/Ari/Documents/GitHub/OSM-Print-Map-Generator/orange.tif"
+otif <- "C:/Users/Ari/Documents/GitHub/OSM-Print-Map-Generator/orange.tif"
 otif <- "/Users/mac/Desktop/waywiser/OSM-Print-Map-Generator/orange.tif"
 gtif<- "/Users/mac/Desktop/waywiser/OSM-Print-Map-Generator/green.tif"
 
@@ -123,5 +138,16 @@ img_stack_crop <- crop(img_stack, parks)
 
 
 
+plot(streets_buf)
+plot(parks_p, col = 'forest green', add = T )
 
+setwd('/Users/mac/Desktop/waywiser/OSM-Print-Map-Generator/prints')
+setwd("C:/Users/Ari/Documents/GitHub/OSM-Print-Map-Generator/prints")
+dev.copy2pdf(file="test.pdf", width = 7, height = 5)
 
+pdf("MyPlot.pdf", height=10, width=10)
+plot(runif(100), runif(100))
+dev.off()
+
+library(mapview)
+mapview(parks$osm_polygons)
