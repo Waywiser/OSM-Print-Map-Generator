@@ -6,6 +6,7 @@ library(sf)
 library(remotes)
 library(rgeos)
 library(rmapshaper)
+library(raster)
 
 #remotes::install_github("coolbutuseless/ggpattern")
 
@@ -57,13 +58,18 @@ parks <- opq(bbox = c((dat$lon - zoom), (dat$lat - zoom*1.05), (dat$lon + zoom),
   add_osm_feature(key = "leisure", value = c("park","pitch", "nature_reserve", "garden", "residential"))
 parks <- osmdata_sp(parks, quiet = TRUE)
 parks_p <- parks$osm_polygons
-parks_mp <- parks$osm_polygons
+parks_mp <- parks$osm_multipolygons
 
-parks <- st_as_sf(parks)
-parks <- st_crop(parks, my_box_sf)  
-plot(parks$geometry)
 
-#add cemetery
+parks_p <- st_as_sf(parks_p)
+parks_mp <- st_as_sf(parks_mp)
+
+plot(parks_p$geometry)
+plot(parks_mp$geometry)
+
+  #parks<- st_crop(parks, my_box_sf)  
+
+#pull cemetery
 cemetery <- opq(bbox = c((dat$lon - zoom), (dat$lat - zoom*1.05), (dat$lon + zoom), (dat$lat + zoom*1.05)))%>%
   add_osm_feature(key = "landuse", value = c("cemetery"))
 cemetery <- osmdata_sp(cemetery, quiet = TRUE)
@@ -72,5 +78,50 @@ cemetery_mp <- cemetery$osm_multipolygons
 cemetery_p <- st_as_sf(cemetery_p)
 cemetery_mp <- st_as_sf(cemetery_mp)
 
+plot(cemetery_p$geometry)
+plot(cemetery_mp$geometry)
 
-cemetery <- st_crop(cemetery, my_box_sf) 
+  #cemetery <- st_crop(cemetery, my_box_sf) 
+
+#buffer streets / get blocks
+split <- gIntersection(my_box, streets)               # intersect your line with the polygon
+streets_buf <- gBuffer(split, width = 0.0001)        # create a very thin polygon buffer of the intersected line
+blocks <- gDifference(my_box, streets_buf)   
+
+
+#import rasters
+#tif <- "C:/Users/Ari/Documents/GitHub/OSM-Print-Map-Generator/orange.tif"
+otif <- "/Users/mac/Desktop/waywiser/OSM-Print-Map-Generator/orange.tif"
+gtif<- "/Users/mac/Desktop/waywiser/OSM-Print-Map-Generator/green.tif"
+
+#make roads layer
+tif <- raster(otif) 
+tif=stack(tif)
+bb <- extent(my_box_sf)
+extent(tif) <- bb
+
+streets_buf <- st_as_sf(streets_buf)
+streets_tif <- mask(tif, streets_buf)
+
+#make parks layer
+tif <- raster(gtif) 
+tif=stack(tif)
+bb <- extent(my_box_sf)
+extent(tif) <- bb
+
+parks_tif <- mask(tif, parks_p)
+
+plotRGB(tif)
+
+
+plotRGB(parks_tif)
+plotRGB(streets_tif, add=T)
+plot(parks, border = "green", add=T)
+
+#crop data
+img_stack_crop <- crop(img_stack, parks)
+
+
+
+
+

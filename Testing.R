@@ -3,48 +3,6 @@ library(ggplot2)
 
 setwd('C:/Users/Ari/Documents/GitHub/OSM-Print-Map-Generator')
 
-
-
-
-#####################################
-r <- raster('orange.png')
-bb <- extent(my_box_sf)
-extent(r) <- bb
-
-#r <- setExtent(r, bb, keepres=TRUE)
-
-plot(r)
-
-
-
-ggplot() +
-  geom_raster(data = r, aes(x = x, y = y, fill = orange)) + 
-  coord_quickmap()
-
-
-#####################################
-library(png)
-
-url <- "https://www.rstudio.com/wp-content/uploads/2014/06/RStudio-Ball.png"
-destfile <- "myfile.png"
-r_studio <- download.file(url,destfile, mode="wb")
-r_studio <- readPNG("myfile.png")
-
-img <- r_studio
-plot(img)
-
-
-#####################################
-library(raster)
-r <- ("C:/Users/Ari/Documents/GitHub/OSM-Print-Map-Generator/orange.tif")
-r_imp <- raster(r)
- 
-plot(r_imp)
-
-ggplot() +
-  geom_raster(data = r_imp, aes(x = x, y = y, fill = orange)) + 
-  coord_quickmap()
-
 #############################################
 #############################################
 #############################################
@@ -55,12 +13,14 @@ library(viridis)
 datafold <- "C:/Users/Ari/Documents/GitHub/OSM-Print-Map-Generator/orange.tif"
 test <- raster(datafold) 
 
-bb <- extent(my_box_sf)
-extent(test) <- bb
 
 test_spdf <- as(test, "SpatialPixelsDataFrame")
 test_df <- as.data.frame(test_spdf)
 colnames(test_df) <- c("value", "x", "y")
+
+
+bb <- extent(my_box_sf)
+extent(test) <- bb
 
 ggplot() +  
   geom_tile(data=test_df, aes(x=x, y=y, fill=value), alpha=0.8) + 
