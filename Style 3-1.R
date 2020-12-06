@@ -7,6 +7,7 @@ library(remotes)
 library(rgeos)
 library(rmapshaper)
 library(raster)
+library(geojsonio)
 
 #remotes::install_github("coolbutuseless/ggpattern")
 
@@ -15,7 +16,7 @@ title = "PARIS"
 subtitle = "FRANCE"
 
 city_name <- (paste(title,",", subtitle, sep="", collapse=NULL))
-zoom = 100
+zoom = 60
 
 blue <- c("https://i.pinimg.com/originals/0d/c6/f0/0dc6f0f6af86d72b22fd7346010697e1.jpg")
 orange<- c("https://www.achildsplacepa.org/wp-content/uploads/2018/12/GettyImages-986491786.jpg")
@@ -65,7 +66,7 @@ parks_p <- st_as_sf(parks_p)
 parks_mp <- st_as_sf(parks_mp)
 
 plot(parks_p$geometry)
-plot(parks_mp$geometry)
+plot(parks_mp$geometry, add= T)
 
   #parks<- st_crop(parks, my_box_sf)  
 
@@ -78,8 +79,8 @@ cemetery_mp <- cemetery$osm_multipolygons
 cemetery_p <- st_as_sf(cemetery_p)
 cemetery_mp <- st_as_sf(cemetery_mp)
 
-plot(cemetery_p$geometry)
-plot(cemetery_mp$geometry)
+plot(cemetery_p$geometry, add= T)
+plot(cemetery_mp$geometry, add = T)
 
   #cemetery <- st_crop(cemetery, my_box_sf) 
 
@@ -93,16 +94,36 @@ water_mp <- water$osm_multipolygons
 water_p <- st_as_sf(water_p)
 water_mp <- st_as_sf(water_mp)
 
-plot(water_p$geometry)
-plot(water_mp$geometry)
+water <- opq(bbox = c((dat$lon - zoom*1.1), (dat$lat - zoom*1.1), (dat$lon + zoom*1.1), (dat$lat + zoom*1.1)))%>%
+  add_osm_feature(key = "natural", value = "water") %>% 
+  osmdata_sf()
 
-mapview(water_p)
+water <- 
+
+water_p <- water$osm_polygons
+water_mp <- water$osm_multipolygons
+
+plot(water_p$geometry)
+plot(blocks, add = T)
+
+library(mapview)
+
+
+library(geojsonio)
+water <- geojson_read("C:/Users/Ari/Documents/GitHub/OSM-Print-Map-Generator/shapes/paris_water_diss.geojson",  what = "sp")
+
+
+plot(blocks)
+plot(water, col= 'blue', add = T)
+
+
 
 #buffer streets / get blocks
 split <- gIntersection(my_box, streets)               # intersect your line with the polygon
 streets_buf <- gBuffer(split, width = 0.0001)        # create a very thin polygon buffer of the intersected line
 blocks <- gDifference(my_box, streets_buf)   
 
+plot(blocks, add= T)
 
 #import rasters
 otif <- "C:/Users/Ari/Documents/GitHub/OSM-Print-Map-Generator/orange.tif"
@@ -118,6 +139,8 @@ extent(tif) <- bb
 streets_buf <- st_as_sf(streets_buf)
 streets_tif <- mask(tif, streets_buf)
 
+plot(streets_buf, add=T)
+
 #make parks layer
 tif <- raster(gtif) 
 tif=stack(tif)
@@ -132,22 +155,33 @@ plotRGB(tif)
 plotRGB(parks_tif)
 plotRGB(streets_tif, add=T)
 plot(parks, border = "green", add=T)
+plot(blocks, add= T)
+
+
 
 #crop data
 img_stack_crop <- crop(img_stack, parks)
 
 
-
 plot(streets_buf)
 plot(parks_p, col = 'forest green', add = T )
 
+
+#export pdf
 setwd('/Users/mac/Desktop/waywiser/OSM-Print-Map-Generator/prints')
 setwd("C:/Users/Ari/Documents/GitHub/OSM-Print-Map-Generator/prints")
-dev.copy2pdf(file="test.pdf", width = 7, height = 5)
 
-pdf("MyPlot.pdf", height=10, width=10)
-plot(runif(100), runif(100))
-dev.off()
+plot(blocks, col = 'light grey')
+plot(streets_buf,col ='orange', add = T)
+plot(parks_p, col = 'green', add= T)
+plot(water, col = 'light blue', add = T)
+
+dev.copy2pdf(file="paris shapes.pdf", width = 11, height = 17)
+
+
+
+pdf("MyPlot4.pdf", height=11, width=17)
+
 
 library(mapview)
 mapview(parks$osm_polygons)
