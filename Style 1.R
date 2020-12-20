@@ -4,19 +4,17 @@ library(sf)
 library(sp)
 
 
-
 ###############################
 ########### INPUTS ############
 ###############################
 
+city = "AMSTERDAM"
+country = "NETHERLANDS"
+zoom.level = 20
 
-city = "DUBLIN"
-country = "IRELAND"
-zoom.level = 5
 
-
-save.location <- 'C:/Users/Ari/Documents/GitHub/OSM-Print-Map-Generator/prints'
-
+#save.location <- 'C:/Users/Ari/Documents/GitHub/OSM-Print-Map-Generator/prints'
+save.location <- '/Users/mac/Desktop/waywiser/OSM-Print-Map-Generator/prints'
 
 
 ###############################
@@ -52,7 +50,7 @@ my_box_sf <- st_as_sf(my_box)
 big_streets <- my_box_sf %>%
   opq()%>%
   add_osm_feature(key = "highway", 
-                  value = c("motorway", "primary", "motorway_link", "primary_link")) %>%
+                  value = c("motorway", "primary", "motorway_link", "primary_link", "trunk", "trunk_link")) %>%
                   osmdata_sf()
 
 
@@ -91,13 +89,12 @@ coastline <- coastline$osm_lines
 plot(coastline$geometry)
 
 
-
 #create map
 map  <- 
 ggplot() +
   geom_sf(data = total_water,
           inherit.aes = FALSE,
-          fill = '#233036',
+          fill = 'black',
           color = "white",
           size = .1,
           alpha = 1) +
@@ -108,8 +105,8 @@ ggplot() +
           alpha = 1) +
   geom_sf(data = med_streets$osm_lines,
           inherit.aes = FALSE,
-          color = "#919191",
-          size = .65,
+          color = "#212121",
+          size = .35,
           alpha = 1) +
   geom_sf(data = railway$osm_lines,
           inherit.aes = FALSE,
@@ -118,13 +115,19 @@ ggplot() +
           alpha = 1) +
   geom_sf(data = big_streets$osm_lines,
           inherit.aes = FALSE,
-          color = "#919191",
-          size = .65,
+          color = "#212121",
+          size = .35,
           alpha = 1) +
   geom_sf(data = coastline,
           inherit.aes = FALSE,
           color = "#919191",
           size = .65,
+          alpha = 1) +
+  geom_sf(data = ocean,
+          inherit.aes = FALSE,
+          fill = 'black',
+          color = "white",
+          size = .1,
           alpha = 1) +
   coord_sf(xlim = c(e, w), 
            ylim = c(s + (zoom/6), n - (zoom/6)),
@@ -145,7 +148,7 @@ print
 
 setwd(save.location)
 ggsave(filename=(paste(city_name,".png", sep="", collapse=NULL)), plot=map, device="png",
-       path="./", height=11, width=8.5, units="in", dpi=300)
+       path="./", height=17, width=11, units="in", dpi=300)
 
 
 

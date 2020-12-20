@@ -12,7 +12,7 @@ water1_mp <- water1$osm_multipolygons
 water2 <- my_box_sf %>%
   opq()%>%
   add_osm_feature(key = "water",
-                  value = c("river", "lake"
+                  value = c("river", "lake", "canal"
                   )) %>%
   osmdata_sf()
 water2_p <- water2$osm_polygons
@@ -40,6 +40,7 @@ water4 <- my_box_sf %>%
 water4_p <- water4$osm_polygons
 water4_mp <- water4$osm_multipolygons
 
+
 plot(my_box_sf)
 plot(coastline$geometry, add =T)
 
@@ -55,7 +56,7 @@ water4_p <- water4_p[,reqd]
 water4_mp <- water4_mp[,reqd]
 
 #combine all water features
-water_combined <- rbind(water1_p, water1_mp, water2_p, water2_mp, water3_p, water3_mp,water4_p, water4_mp)
+water_combined <- rbind(water1_p, water1_mp, water2_p, water2_mp, water3_p, water3_mp, water4_p, water4_mp)
 
 #check geometries and make valid
 st_is_valid(water_combined, reason = TRUE)
