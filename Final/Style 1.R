@@ -1,0 +1,277 @@
+###############################
+###     OSM Map Generator   ###
+###      Black and White    ###
+###         Street Map      ###
+###############################
+
+#Set options for the map below
+city = "AMSTERDAM"
+country = "NETHERLANDS"
+zoom.level = 20
+height = 17
+width = 11
+dpi = 300
+save.location <- '/Users/mac/Desktop/test folder'
+
+#To manually set the center of the map, enter coordinates below. Otherwise, leave as NULL.
+latitude = NULL
+longitude = NULL
+
+# When all options are set, highlight the entire script, and run with control+enter (Windows) or command+enter (Mac)
+
+
+
+
+
+
+
+
+
+###############################
+########## Libraries ##########
+###############################
+library(osmdata) 
+library(ggmap)
+library(sf)
+library(sp)
+library(rgeos)
+library(rmapshaper)
+
+
+###############################
+###############################
+######### SCRIPT ##############
+###############################
+###############################
+
+city_name <- (paste(city,",", country, sep="", collapse=NULL))
+zoom= 1/zoom.level
+
+#gets OMS-defined centroid by city_ name
+is.null(latitude)
+
+if (is.null(latitude) == TRUE) { dat <- getbb(city_name, format_out ="data.frame", limit = 1) 
+dat <- dat[,c("lat","lon")]
+cols.num <- c("lat","lon")
+dat[cols.num] <- sapply(dat[cols.num],as.numeric)
+
+dat <- getbb(city_name, format_out ="data.frame", limit = 1) 
+dat <- dat[,c("lat","lon")]
+cols.num <- c("lat","lon")
+dat[cols.num] <- sapply(dat[cols.num],as.numeric)
+
+n = (dat$lat + (zoom*1.05))
+s = (dat$lat - (zoom*1.05)) 
+w = (dat$lon + zoom) 
+e = (dat$lon - zoom)
+} else {
+  n = (latitude + (zoom*1.05))
+  s = (latitude - (zoom*1.05)) 
+  w = (longitude+ zoom) 
+  e = (longitude - zoom)
+}
+
+
+#make bounding box
+CRS <- "+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs +towgs84=0,0,0"
+my_box <- rgeos::bbox2SP(n, s, w, e,
+                         proj4string = CRS(CRS))
+my_box_sf <- st_as_sf(my_box)
+
+
+#pulling data
+big_streets <- my_box_sf %>%
+  opq()%>%
+  add_osm_feature(key = "highway", 
+                  value = c("motorway", "primary", "motorway_link", "primary_link", "trunk", "trunk_link")) %>%
+                  osmdata_sf()
+
+
+med_streets <- my_box_sf %>%
+  opq()%>%
+  add_osm_feature(key = "highway", 
+                  value = c("secondary", "tertiary", "secondary_link", "tertiary_link")) %>%
+                  osmdata_sf()
+
+
+small_streets <- my_box_sf %>%
+  opq()%>%
+  add_osm_feature(key = "highway", 
+                  value = c("residential", "living_street",
+                            "unclassified",
+                            "service"
+                  )) %>%
+                   osmdata_sf()
+
+small_streets <- small_streets$osm_lines
+small_streets <- small_streets[c("name","geometry")]
+
+railway <- my_box_sf %>%
+  opq()%>%
+  add_osm_feature(key = "railway", value="rail") %>%
+  osmdata_sf()
+
+
+coastline <- my_box_sf %>%
+  opq()%>%
+  add_osm_feature(key = "natural", 
+                  value = c("coastline"
+                  )) %>%
+  osmdata_sf()
+coastline <- coastline$osm_lines
+
+#water pull
+#pull water for plot
+water1 <- my_box_sf %>%
+  opq()%>%
+  add_osm_feature(key = "waterway",
+                  value = c("riverbank", "dock"
+                  )) %>%
+  osmdata_sf()
+water1_p <- water1$osm_polygons
+water1_mp <- water1$osm_multipolygons
+
+water2 <- my_box_sf %>%
+  opq()%>%
+  add_osm_feature(key = "water",
+                  value = c("river", "lake", "canal"
+                  )) %>%
+  osmdata_sf()
+water2_p <- water2$osm_polygons
+water2_mp <- water2$osm_multipolygons
+
+
+water3 <- my_box_sf %>%
+  opq()%>%
+  add_osm_feature(key = "natural",
+                  value = c("bay", "strait", "wetland", "water"
+                  )) %>%
+  
+  osmdata_sf()
+water3_p <- water3$osm_polygons
+water3_mp <- water3$osm_multipolygons
+
+
+water4 <- my_box_sf %>%
+  opq()%>%
+  add_osm_feature(key = "landuse",
+                  value = c("resevoir"
+                  )) %>%
+  
+  osmdata_sf()
+water4_p <- water4$osm_polygons
+water4_mp <- water4$osm_multipolygons
+
+#remove all columns except geometry
+reqd <- "geometry"
+water1_p <- water1_p[,reqd]
+water1_mp <- water1_mp[,reqd]
+water2_p <- water2_p[,reqd]
+water2_mp <- water2_mp[,reqd]
+water3_p <- water3_p[,reqd]
+water3_mp <- water3_mp[,reqd]
+water4_p <- water4_p[,reqd]
+water4_mp <- water4_mp[,reqd]
+
+#combine all water features
+water_combined <- rbind(water1_p, water1_mp, water2_p, water2_mp, water3_p, water3_mp, water4_p, water4_mp)
+
+#check geometries and make valid
+st_is_valid(water_combined, reason = TRUE)
+water_combined<- st_make_valid(water_combined)
+st_is_valid(water_combined, reason = TRUE)
+
+#water2_mp %>% st_buffer(0)
+total_water <- st_union(water_combined)
+total_water <- as(total_water, 'Spatial')
+total_water <- gIntersection(my_box, total_water)
+
+#convert back to sf
+total_water <- st_as_sf(total_water)
+
+
+#render ocean
+ocean <- my_box_sf %>%
+  opq()%>%
+  add_osm_feature(key = "natural",
+                  value = c("coastline"
+                  )) 
+ocean <- osmdata_sp(ocean, quiet = TRUE)
+ocean <- ocean$osm_lines
+split <- gIntersection(my_box, ocean)               # intersect your line with the polygon
+ocean_buf <- gBuffer(split, width = 0.0001)        # create a very thin polygon buffer of the intersected line
+blocks <- gDifference(my_box, ocean_buf)   
+blocks<- ms_explode(blocks)
+blocks <- st_as_sf(blocks)
+blocks$area <- round(((st_area(blocks))*0.00000038610215855), 1)
+max <- max(blocks$area)
+ocean <- blocks[which(blocks$area < max),]
+
+#create map
+map  <- 
+ggplot() +
+  geom_sf(data = total_water,
+          inherit.aes = FALSE,
+          fill = 'black',
+          color = "white",
+          size = .1,
+          alpha = 1) +
+  geom_sf(data = small_streets,
+          inherit.aes = FALSE,
+          color = "#cccccc",
+          size = .25,
+          alpha = 1) +
+  geom_sf(data = med_streets$osm_lines,
+          inherit.aes = FALSE,
+          color = "#212121",
+          size = .35,
+          alpha = 1) +
+  geom_sf(data = railway$osm_lines,
+          inherit.aes = FALSE,
+          color = "#cccccc",
+          size = .05,
+          alpha = 1) +
+  geom_sf(data = big_streets$osm_lines,
+          inherit.aes = FALSE,
+          color = "#212121",
+          size = .35,
+          alpha = 1) +
+  geom_sf(data = coastline,
+          inherit.aes = FALSE,
+          color = "#919191",
+          size = .65,
+          alpha = 1) +
+  geom_sf(data = ocean,
+          inherit.aes = FALSE,
+          fill = 'black',
+          color = "white",
+          size = .1,
+          alpha = 1) +
+  coord_sf(xlim = c(e, w), 
+           ylim = c(s + (zoom/6), n - (zoom/6)),
+           expand = FALSE)+
+  theme_void()
+  ggtitle(city, subtitle = country)
+
+#plot map and set theme
+print <- map + theme(
+  plot.title = element_text(family = 'Trebuchet MS', color = "black", size = 100, face = "bold", hjust = 0.5, margin = margin(t = 20)),
+  plot.subtitle = element_text(family = 'Trebuchet MS', color = "black", size = 40, hjust = 0.5,margin = margin(t=5, b = 20)))
+
+setwd(save.location)
+ggsave(filename=(paste(city_name,".png", sep="", collapse=NULL)), plot=map, device="png",
+       path="./", height=height, width=width, units="in", dpi=dpi)
+
+#
+#
+#
+#
+#
+#
+#
+#
+######## MAP EXPORT FINISHED #################
+
+
+
+

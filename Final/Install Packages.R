@@ -1,0 +1,6 @@
+install.packages('osmdata')
+install.packages('ggmap')
+install.packages('sf')
+install.packages('sp')
+install.packages('rgeos')
+install.packages('rmapshaper')
